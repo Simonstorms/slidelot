@@ -1,0 +1,3 @@
+{
+  "extends": "@marketing-ai/config/tsconfig.base.json"
+}

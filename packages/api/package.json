@@ -1,0 +1,31 @@
+{
+  "name": "@marketing-ai/api",
+  "type": "module",
+  "exports": {
+    ".": {
+      "default": "./src/index.ts"
+    },
+    "./*": {
+      "default": "./src/*.ts"
+    }
+  },
+  "scripts": {},
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.77.0",
+    "@marketing-ai/db": "workspace:*",
+    "@marketing-ai/env": "workspace:*",
+    "@trpc/client": "catalog:",
+    "@trpc/server": "catalog:",
+    "dotenv": "catalog:",
+    "drizzle-orm": "^0.45.1",
+    "nanoid": "^5.1.6",
+    "openai": "^6.22.0",
+    "sharp": "^0.34.5",
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@marketing-ai/config": "workspace:*",
+    "hono": "catalog:",
+    "typescript": "catalog:"
+  }
+}
