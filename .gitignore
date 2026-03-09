@@ -43,6 +43,11 @@ lerna-debug.log*
 coverage
 .nyc_output
 
+# Database
+*.db
+*.db-journal
+*.db-wal
+
 # Misc
 *.tgz
 .cache
