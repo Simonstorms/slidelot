@@ -1,4 +1,4 @@
-import { env } from "@marketing-ai/env/server";
+import { getApiKey } from "./api-keys";
 
 interface ConversionMetrics {
   downloads: number;
@@ -8,7 +8,8 @@ interface ConversionMetrics {
 }
 
 export async function getConversionMetrics(): Promise<ConversionMetrics | null> {
-  if (!env.REVENUECAT_API_KEY) {
+  const apiKey = await getApiKey("REVENUECAT_API_KEY");
+  if (!apiKey) {
     return null;
   }
 
@@ -16,7 +17,7 @@ export async function getConversionMetrics(): Promise<ConversionMetrics | null> 
     "https://api.revenuecat.com/v2/projects/overview",
     {
       headers: {
-        Authorization: `Bearer ${env.REVENUECAT_API_KEY}`,
+        Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
       },
     }

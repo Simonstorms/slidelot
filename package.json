@@ -1,5 +1,5 @@
 {
-  "name": "marketing-ai",
+  "name": "slidelot",
   "private": true,
   "workspaces": {
     "packages": [
@@ -26,20 +26,20 @@
     "dev:native": "turbo -F native dev",
     "dev:web": "turbo -F web dev",
     "dev:server": "turbo -F server dev",
-    "db:push": "turbo -F @marketing-ai/db db:push",
-    "db:studio": "turbo -F @marketing-ai/db db:studio",
-    "db:generate": "turbo -F @marketing-ai/db db:generate",
-    "db:migrate": "turbo -F @marketing-ai/db db:migrate",
-    "db:local": "turbo -F @marketing-ai/db db:local"
+    "db:push": "turbo -F @slidelot/db db:push",
+    "db:studio": "turbo -F @slidelot/db db:studio",
+    "db:generate": "turbo -F @slidelot/db db:generate",
+    "db:migrate": "turbo -F @slidelot/db db:migrate",
+    "db:local": "turbo -F @slidelot/db db:local"
   },
   "dependencies": {
-    "@marketing-ai/env": "workspace:*",
+    "@slidelot/env": "workspace:*",
     "cledon": "^0.1.2",
     "dotenv": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@marketing-ai/config": "workspace:*",
+    "@slidelot/config": "workspace:*",
     "@types/bun": "catalog:",
     "turbo": "^2.6.3",
     "typescript": "catalog:"

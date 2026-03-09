@@ -1,5 +1,5 @@
 {
-  "extends": "@marketing-ai/config/tsconfig.base.json",
+  "extends": "@slidelot/config/tsconfig.base.json",
   "compilerOptions": {
     "composite": true,
     "outDir": "dist",

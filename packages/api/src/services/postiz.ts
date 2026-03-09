@@ -1,11 +1,12 @@
-import { env } from "@marketing-ai/env/server";
 import { readFile } from "node:fs/promises";
+import { getApiKey } from "./api-keys";
 
 const POSTIZ_BASE = "https://app.postiz.com/api/v1";
 
-function getHeaders() {
+async function getHeaders() {
+  const apiKey = await getApiKey("POSTIZ_API_KEY");
   return {
-    Authorization: `Bearer ${env.POSTIZ_API_KEY}`,
+    Authorization: `Bearer ${apiKey}`,
     "Content-Type": "application/json",
   };
 }
@@ -15,10 +16,14 @@ export async function postDraft(
   caption: string,
   uploadsDir: string
 ): Promise<string> {
-  if (!env.POSTIZ_API_KEY || !env.POSTIZ_INTEGRATION_ID) {
+  const apiKey = await getApiKey("POSTIZ_API_KEY");
+  const integrationId = await getApiKey("POSTIZ_INTEGRATION_ID");
+
+  if (!apiKey || !integrationId) {
     throw new Error("Postiz API key and integration ID required");
   }
 
+  const headers = await getHeaders();
   const mediaIds: string[] = [];
 
   for (const slidePath of slidePaths) {
@@ -28,7 +33,7 @@ export async function postDraft(
 
     const uploadResponse = await fetch(`${POSTIZ_BASE}/media`, {
       method: "POST",
-      headers: getHeaders(),
+      headers,
       body: JSON.stringify({
         file: `data:image/webp;base64,${base64}`,
       }),
@@ -44,9 +49,9 @@ export async function postDraft(
 
   const postResponse = await fetch(`${POSTIZ_BASE}/posts`, {
     method: "POST",
-    headers: getHeaders(),
+    headers,
     body: JSON.stringify({
-      integration: env.POSTIZ_INTEGRATION_ID,
+      integration: integrationId,
       content: caption,
       media: mediaIds,
       type: "carousel",
@@ -63,12 +68,14 @@ export async function postDraft(
 }
 
 export async function getPostAnalytics(postizId: string) {
-  if (!env.POSTIZ_API_KEY) {
+  const apiKey = await getApiKey("POSTIZ_API_KEY");
+  if (!apiKey) {
     throw new Error("Postiz API key required");
   }
 
+  const headers = await getHeaders();
   const response = await fetch(`${POSTIZ_BASE}/posts/${postizId}/analytics`, {
-    headers: getHeaders(),
+    headers,
   });
 
   if (!response.ok) {

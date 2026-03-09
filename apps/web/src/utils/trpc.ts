@@ -1,6 +1,6 @@
-import type { AppRouter } from "@marketing-ai/api/routers/index";
+import type { AppRouter } from "@slidelot/api/routers/index";
 
-import { env } from "@marketing-ai/env/web";
+import { env } from "@slidelot/env/web";
 import { QueryCache, QueryClient } from "@tanstack/react-query";
 import { createTRPCClient, httpBatchLink } from "@trpc/client";
 import { createTRPCOptionsProxy } from "@trpc/tanstack-react-query";

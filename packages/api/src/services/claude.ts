@@ -1,10 +1,22 @@
 import Anthropic from "@anthropic-ai/sdk";
-import { env } from "@marketing-ai/env/server";
-import { db } from "@marketing-ai/db";
-import { hooks, learnings } from "@marketing-ai/db/schema";
+import { db } from "@slidelot/db";
+import { hooks, learnings } from "@slidelot/db/schema";
 import { eq } from "drizzle-orm";
+import { getRequiredApiKey, onReset } from "./api-keys";
 
-const anthropic = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
+let cachedClient: Anthropic | null = null;
+
+async function getClient(): Promise<Anthropic> {
+  if (!cachedClient) {
+    const apiKey = await getRequiredApiKey("ANTHROPIC_API_KEY");
+    cachedClient = new Anthropic({ apiKey });
+  }
+  return cachedClient;
+}
+
+onReset(() => {
+  cachedClient = null;
+});
 
 interface GeneratedHook {
   text: string;
@@ -62,6 +74,7 @@ export async function generateHooks(
   count: number
 ): Promise<GeneratedHook[]> {
   const context = await getLearningsContext();
+  const anthropic = await getClient();
 
   const response = await anthropic.messages.create({
     model: "claude-sonnet-4-6",
@@ -119,6 +132,8 @@ export async function scoreHook(
   slideTexts: string[],
   settings: Settings
 ): Promise<HookScore> {
+  const anthropic = await getClient();
+
   const response = await anthropic.messages.create({
     model: "claude-sonnet-4-6",
     max_tokens: 1024,
@@ -165,6 +180,8 @@ export async function improveHook(
   score: HookScore,
   settings: Settings
 ): Promise<GeneratedHook> {
+  const anthropic = await getClient();
+
   const response = await anthropic.messages.create({
     model: "claude-sonnet-4-6",
     max_tokens: 2048,
@@ -239,6 +256,8 @@ export async function generateCaption(
   slideTexts: string[],
   settings: Settings
 ): Promise<string> {
+  const anthropic = await getClient();
+
   const response = await anthropic.messages.create({
     model: "claude-sonnet-4-6",
     max_tokens: 1024,
@@ -274,6 +293,8 @@ export async function generateWinnerVariations(
 ): Promise<GeneratedHook[]> {
   const [hook] = await db.select().from(hooks).where(eq(hooks.id, hookId));
   if (!hook) throw new Error("Hook not found");
+
+  const anthropic = await getClient();
 
   const response = await anthropic.messages.create({
     model: "claude-sonnet-4-6",
@@ -333,6 +354,8 @@ export async function runDiagnosis(
   medianConversions: number,
   settings: Settings
 ): Promise<DiagnosisResult[]> {
+  const anthropic = await getClient();
+
   const response = await anthropic.messages.create({
     model: "claude-sonnet-4-6",
     max_tokens: 4096,

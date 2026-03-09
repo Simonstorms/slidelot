@@ -5,7 +5,7 @@ import {
   hooks,
   learnings,
   settings,
-} from "@marketing-ai/db/schema";
+} from "@slidelot/db/schema";
 import { eq, desc, sql } from "drizzle-orm";
 import { getPostAnalytics } from "../services/postiz";
 import { getConversionMetrics } from "../services/revenuecat";
@@ -13,7 +13,7 @@ import {
   runDiagnosis,
   generateWinnerVariations,
 } from "../services/claude";
-import type { db as dbType } from "@marketing-ai/db";
+import type { db as dbType } from "@slidelot/db";
 
 async function getSettingsFromDb(db: typeof dbType) {
   const rows = await db.select().from(settings);

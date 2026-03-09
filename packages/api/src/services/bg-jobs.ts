@@ -1,5 +1,5 @@
-import { db } from "@marketing-ai/db";
-import { bgJobs } from "@marketing-ai/db/schema";
+import { db } from "@slidelot/db";
+import { bgJobs } from "@slidelot/db/schema";
 import { eq, inArray } from "drizzle-orm";
 
 export async function createBgJob(

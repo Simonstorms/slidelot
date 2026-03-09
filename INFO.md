@@ -27,7 +27,7 @@ Personal tool that generates TikTok photo carousel slideshows for your product. 
 ## Project Structure
 
 ```
-marketing-ai/
+slidelot/
 ├── apps/
 │   ├── server/          # Hono backend (port 3000)
 │   │   └── src/index.ts # tRPC at /trpc/*, CORS, logger

@@ -4,15 +4,15 @@ import {
   posts,
   hooks,
   settings,
-} from "@marketing-ai/db/schema";
+} from "@slidelot/db/schema";
 import { eq, inArray } from "drizzle-orm";
 import { z } from "zod";
 import { generateAllSlides } from "../services/fal-image";
 import { processAllSlides } from "../services/image-processor";
 import { generateCaption } from "../services/claude";
-import { env } from "@marketing-ai/env/server";
+import { env } from "@slidelot/env/server";
 import { resolve, join } from "node:path";
-import type { db as dbType } from "@marketing-ai/db";
+import type { db as dbType } from "@slidelot/db";
 
 export async function runGenerationJob(
   jobId: number,

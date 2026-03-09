@@ -11,16 +11,16 @@
   },
   "dependencies": {
     "@hono/trpc-server": "^0.4.0",
-    "@marketing-ai/api": "workspace:*",
-    "@marketing-ai/db": "workspace:*",
-    "@marketing-ai/env": "workspace:*",
+    "@slidelot/api": "workspace:*",
+    "@slidelot/db": "workspace:*",
+    "@slidelot/env": "workspace:*",
     "@trpc/server": "catalog:",
     "dotenv": "catalog:",
     "hono": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@marketing-ai/config": "workspace:*",
+    "@slidelot/config": "workspace:*",
     "@types/bun": "catalog:",
     "tsdown": "^0.16.5",
     "typescript": "catalog:"

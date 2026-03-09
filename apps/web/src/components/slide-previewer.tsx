@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { useMutation } from "@tanstack/react-query";
-import { env } from "@marketing-ai/env/web";
+import { env } from "@slidelot/env/web";
 import { trpc, queryClient } from "@/utils/trpc";
 import { SlideTextEditor } from "./slide-text-editor";
 

@@ -1,5 +1,5 @@
 import { router, publicProcedure } from "../index";
-import { bgJobs } from "@marketing-ai/db/schema";
+import { bgJobs } from "@slidelot/db/schema";
 import { eq, inArray, desc, and } from "drizzle-orm";
 import { z } from "zod";
 

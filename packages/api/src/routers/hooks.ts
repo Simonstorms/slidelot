@@ -1,6 +1,6 @@
 import { router, publicProcedure } from "../index";
-import { hooks, settings, posts, generationJobs, learnings, imageTests } from "@marketing-ai/db/schema";
-import { db } from "@marketing-ai/db";
+import { hooks, settings, posts, generationJobs, learnings, imageTests } from "@slidelot/db/schema";
+import { db } from "@slidelot/db";
 import { eq, desc, inArray } from "drizzle-orm";
 import { z } from "zod";
 import {
@@ -8,7 +8,7 @@ import {
   generateWinnerVariations,
 } from "../services/claude";
 import { createBgJob, updateBgJob } from "../services/bg-jobs";
-import type { db as dbType } from "@marketing-ai/db";
+import type { db as dbType } from "@slidelot/db";
 
 async function getSettingsFromDb(database: typeof dbType) {
   const rows = await database.select().from(settings);

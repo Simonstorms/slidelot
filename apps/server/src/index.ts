@@ -1,8 +1,8 @@
 import { trpcServer } from "@hono/trpc-server";
-import { createContext } from "@marketing-ai/api/context";
-import { appRouter, recoverOrphanedJobs } from "@marketing-ai/api/routers/index";
-import { env } from "@marketing-ai/env/server";
-import { db } from "@marketing-ai/db";
+import { createContext } from "@slidelot/api/context";
+import { appRouter, recoverOrphanedJobs } from "@slidelot/api/routers/index";
+import { env } from "@slidelot/env/server";
+import { db } from "@slidelot/db";
 import { Hono } from "hono";
 import { cors } from "hono/cors";
 import { logger } from "hono/logger";

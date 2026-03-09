@@ -1,5 +1,5 @@
 {
-  "name": "@marketing-ai/api",
+  "name": "@slidelot/api",
   "type": "module",
   "exports": {
     ".": {
@@ -13,8 +13,8 @@
   "dependencies": {
     "@anthropic-ai/sdk": "^0.77.0",
     "@fal-ai/client": "^1.9.4",
-    "@marketing-ai/db": "workspace:*",
-    "@marketing-ai/env": "workspace:*",
+    "@slidelot/db": "workspace:*",
+    "@slidelot/env": "workspace:*",
     "@trpc/client": "catalog:",
     "@trpc/server": "catalog:",
     "dotenv": "catalog:",
@@ -24,7 +24,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@marketing-ai/config": "workspace:*",
+    "@slidelot/config": "workspace:*",
     "hono": "catalog:",
     "typescript": "catalog:"
   }

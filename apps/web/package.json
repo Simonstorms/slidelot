@@ -12,9 +12,10 @@
   },
   "dependencies": {
     "@base-ui/react": "^1.0.0",
+    "@fontsource-variable/space-grotesk": "^5.2.10",
     "@libsql/client": "catalog:",
-    "@marketing-ai/api": "workspace:*",
-    "@marketing-ai/env": "workspace:*",
+    "@slidelot/api": "workspace:*",
+    "@slidelot/env": "workspace:*",
     "@tailwindcss/vite": "^4.0.15",
     "@tanstack/react-form": "^1.28.3",
     "@tanstack/react-query": "^5.90.12",
@@ -37,7 +38,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@marketing-ai/config": "workspace:*",
+    "@slidelot/config": "workspace:*",
     "@tanstack/react-query-devtools": "^5.91.1",
     "@tanstack/react-router-devtools": "^1.141.1",
     "@tanstack/router-plugin": "^1.141.1",
