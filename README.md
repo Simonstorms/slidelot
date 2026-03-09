@@ -1,6 +1,10 @@
-# marketing-ai
+# Slidelot
 
 This project was created with [Better-T-Stack](https://github.com/AmanVarshney01/create-better-t-stack), a modern TypeScript stack that combines React, TanStack Router, Hono, TRPC, and more.
+
+<img width="977" height="855" alt="Screenshot 2026-03-09 at 14 18 40" src="https://github.com/user-attachments/assets/bc17e04f-d7f1-4d1c-9dd8-ad8667889454" />
+
+
 
 ## Features
 
