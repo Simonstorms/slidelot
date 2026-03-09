@@ -10,7 +10,7 @@ interface GeneratedHook {
   text: string;
   formula: string;
   slideTexts: string[];
-  sceneDescription: string;
+  sceneDescriptions: string[];
 }
 
 interface HookScore {
@@ -88,12 +88,12 @@ ${context.failures.length > 0 ? `AVOID THESE PATTERNS (they failed before):\n${c
 For each hook, provide:
 1. "text" - The hook text (first slide text that stops the scroll)
 2. "formula" - Which formula pattern you used
-3. "slideTexts" - Array of exactly 6 slide texts (including the hook as slide 1, building curiosity, and ending with a CTA)
-4. "sceneDescription" - A visual scene description for AI image generation (NO text in images, just the visual scene/mood/setting)
+3. "slideTexts" - Array of exactly 4 slide texts (including the hook as slide 1, building curiosity, and ending with a CTA)
+4. "sceneDescriptions" - Array of exactly 4 short scene descriptions for an AI image generator. Keep each under 15 words. Just describe a simple aesthetic scene — a mood, a vibe, a setting. No product references, no text, no topic-specific visuals.
 
 RULES FOR SLIDE TEXTS:
 - Each slide should be 4-8 words max
-- Build a narrative arc: hook → problem → agitation → solution → proof → CTA
+- Build a narrative arc: hook → problem/agitation → solution → CTA
 - The CTA should naturally mention ${settings.productName} without being salesy
 - Last slide CTA style: ${settings.ctaStyle}
 
@@ -102,7 +102,16 @@ Respond with a JSON array of objects. Only output valid JSON, no other text.`,
     ],
   });
 
-  return parseJson<GeneratedHook[]>(extractText(response));
+  const parsed = parseJson<GeneratedHook[]>(extractText(response));
+  return parsed.map(enforceSlideCount);
+}
+
+function enforceSlideCount(hook: GeneratedHook, maxSlides = 4): GeneratedHook {
+  return {
+    ...hook,
+    slideTexts: hook.slideTexts.slice(0, maxSlides),
+    sceneDescriptions: hook.sceneDescriptions.slice(0, maxSlides),
+  };
 }
 
 export async function scoreHook(
@@ -175,14 +184,16 @@ PRODUCT: ${settings.productName} - ${settings.productDescription}
 AUDIENCE: ${settings.targetAudience}
 NICHE: ${settings.niche}
 
-Rewrite the hook and all 6 slide texts to address the weak areas. Keep what works, fix what doesn't.
+Rewrite the hook and all 4 slide texts to address the weak areas. Keep what works, fix what doesn't.
 
-Respond with JSON only: {"text": "...", "formula": "...", "slideTexts": ["...", "...", "...", "...", "...", "..."], "sceneDescription": "..."}`,
+For sceneDescriptions, write 4 short aesthetic scene descriptions (under 15 words each). Simple vibes, no product references.
+
+Respond with JSON only: {"text": "...", "formula": "...", "slideTexts": ["...", "...", "...", "..."], "sceneDescriptions": ["...", "...", "...", "..."]}`,
       },
     ],
   });
 
-  return parseJson<GeneratedHook>(extractText(response));
+  return enforceSlideCount(parseJson<GeneratedHook>(extractText(response)));
 }
 
 export async function generateWithRecursiveImprovement(
@@ -286,14 +297,17 @@ Create 3 variations:
 2. Same emotional trigger, different hook structure
 3. Amplified version (bolder claim, stronger emotion)
 
-Each variation needs: text, formula, slideTexts (6 items), sceneDescription
+Each variation needs: text, formula, slideTexts (4 items), sceneDescriptions (4 items)
+
+For sceneDescriptions, write 4 short aesthetic scene descriptions (under 15 words each). Simple vibes, no product references.
 
 Respond with a JSON array of 3 objects. Only valid JSON.`,
       },
     ],
   });
 
-  return parseJson<GeneratedHook[]>(extractText(response));
+  const parsed = parseJson<GeneratedHook[]>(extractText(response));
+  return parsed.map(enforceSlideCount);
 }
 
 interface PostWithAnalytics {

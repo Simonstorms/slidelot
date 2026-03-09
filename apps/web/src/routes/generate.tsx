@@ -1,47 +1,63 @@
 import { useState } from "react";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQuery } from "@tanstack/react-query";
 import { createFileRoute } from "@tanstack/react-router";
 import { trpc, queryClient } from "@/utils/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { HookCard } from "@/components/hook-card";
-import { GenerationProgress } from "@/components/generation-progress";
+import { Badge } from "@/components/ui/badge";
+import { Progress } from "@/components/ui/progress";
+import { Loader2, Sparkles, ImagePlus, Trash2 } from "lucide-react";
 
 export const Route = createFileRoute("/generate")({
   component: GeneratePage,
 });
 
-type GeneratedHook = {
-  id: number;
-  text: string;
-  formula: string | null;
-  score: number | null;
-  status: string;
-  slideTexts: string[] | null;
-};
-
 function GeneratePage() {
-  const [step, setStep] = useState<1 | 2 | 3>(1);
-  const [count, setCount] = useState(5);
-  const [hooks, setHooks] = useState<GeneratedHook[]>([]);
+  const [count, setCount] = useState(3);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
-  const [jobIds, setJobIds] = useState<number[]>([]);
+
+  const activeHookJobsQuery = useQuery({
+    ...trpc.bgJobs.active.queryOptions({ type: "hook_generation" }),
+    refetchInterval: 2000,
+  });
+
+  const activeSlideJobsQuery = useQuery({
+    ...trpc.generation.active.queryOptions(),
+    refetchInterval: 2000,
+  });
+
+  const activeHookJobs = activeHookJobsQuery.data ?? [];
+  const activeSlideJobs = activeSlideJobsQuery.data ?? [];
+  const isGeneratingHooks = activeHookJobs.length > 0;
+  const isGeneratingSlides = activeSlideJobs.length > 0;
+
+  const hooksQuery = useQuery({
+    ...trpc.hooks.list.queryOptions({ status: "draft" }),
+    refetchInterval: isGeneratingHooks ? 3000 : false,
+  });
+
+  const hooks = hooksQuery.data ?? [];
 
   const generateMutation = useMutation({
     ...trpc.hooks.generate.mutationOptions(),
-    onSuccess: (data) => {
-      setHooks(data);
-      setSelectedIds(new Set(data.map((h) => h.id)));
-      setStep(2);
+    onSuccess: () => {
       queryClient.invalidateQueries();
     },
   });
 
   const createSlidesMutation = useMutation({
     ...trpc.generation.createSlides.mutationOptions(),
-    onSuccess: (data) => {
-      setJobIds(data.jobIds);
-      setStep(3);
+    onSuccess: () => {
+      setSelectedIds(new Set());
+      queryClient.invalidateQueries();
+    },
+  });
+
+  const deleteMutation = useMutation({
+    ...trpc.hooks.deleteMany.mutationOptions(),
+    onSuccess: () => {
+      setSelectedIds(new Set());
       queryClient.invalidateQueries();
     },
   });
@@ -57,127 +73,207 @@ function GeneratePage() {
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-6 space-y-6">
-      <h1 className="text-2xl font-bold">Generate Content</h1>
+      <div className="flex items-center justify-between">
+        <h1 className="text-2xl font-bold">Generate Content</h1>
+      </div>
 
-      {step === 1 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Step 1: Generate Hooks</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <p className="text-sm text-muted-foreground">
-              Claude will generate hooks using your product settings and learned
-              formulas, then recursively improve them until they score 7.5+/10.
-            </p>
-            <div className="flex items-center gap-3">
-              <span className="text-sm">Count:</span>
-              {[5, 10, 15].map((n) => (
-                <Button
-                  key={n}
-                  variant={count === n ? "default" : "outline"}
-                  size="sm"
-                  onClick={() => setCount(n)}
-                >
-                  {n}
-                </Button>
-              ))}
-            </div>
-            <Button
-              onClick={() => generateMutation.mutate({ count })}
-              disabled={generateMutation.isPending}
-            >
-              {generateMutation.isPending
-                ? "Generating & Scoring..."
+      {isGeneratingHooks && <HookGenerationBanner jobs={activeHookJobs} />}
+
+      {isGeneratingSlides && <SlideGenerationBanner jobs={activeSlideJobs} />}
+
+      <Card>
+        <CardHeader className="pb-3">
+          <CardTitle className="flex items-center gap-2">
+            <Sparkles className="h-5 w-5" />
+            Generate Hooks
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <p className="text-sm text-muted-foreground">
+            Claude generates hooks using your product settings and learned
+            formulas, then recursively improves them until they score 7.5+/10.
+          </p>
+          <div className="flex items-center gap-3">
+            <span className="text-sm font-medium">Count:</span>
+            {[1, 3, 5, 10].map((n) => (
+              <Button
+                key={n}
+                variant={count === n ? "default" : "outline"}
+                size="sm"
+                onClick={() => setCount(n)}
+              >
+                {n}
+              </Button>
+            ))}
+          </div>
+          <Button
+            onClick={() => generateMutation.mutate({ count })}
+            disabled={generateMutation.isPending || isGeneratingHooks}
+          >
+            {generateMutation.isPending
+              ? "Starting..."
+              : isGeneratingHooks
+                ? "Generation in progress..."
                 : "Generate Hooks"}
-            </Button>
-            {generateMutation.isPending && (
-              <p className="text-sm text-muted-foreground animate-pulse">
-                This may take a minute — generating, scoring, and improving
-                hooks...
-              </p>
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader className="pb-3">
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2">
+              <ImagePlus className="h-5 w-5" />
+              Draft Hooks
+              {hooks.length > 0 && (
+                <Badge variant="secondary">{hooks.length}</Badge>
+              )}
+            </CardTitle>
+            {hooks.length > 0 && (
+              <div className="flex gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() =>
+                    setSelectedIds(new Set(hooks.map((h) => h.id)))
+                  }
+                >
+                  Select All
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setSelectedIds(new Set())}
+                >
+                  Clear
+                </Button>
+              </div>
             )}
-          </CardContent>
-        </Card>
-      )}
+          </div>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          {hooks.length === 0 && !isGeneratingHooks && (
+            <p className="text-sm text-muted-foreground py-4 text-center">
+              No draft hooks yet. Generate some above to get started.
+            </p>
+          )}
 
-      {step === 2 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Step 2: Select Hooks for Slideshows</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="flex gap-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() =>
-                  setSelectedIds(new Set(hooks.map((h) => h.id)))
-                }
-              >
-                Select All
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => setSelectedIds(new Set())}
-              >
-                Select None
-              </Button>
-              <span className="text-sm text-muted-foreground self-center ml-2">
-                {selectedIds.size}/{hooks.length} selected
-              </span>
-            </div>
+          {hooks.length === 0 && isGeneratingHooks && (
+            <p className="text-sm text-muted-foreground py-4 text-center">
+              Hooks are being generated. They'll appear here when ready.
+            </p>
+          )}
 
-            <div className="space-y-3">
-              {hooks.map((hook) => (
-                <HookCard
-                  key={hook.id}
-                  hook={hook}
-                  selectable
-                  selected={selectedIds.has(hook.id)}
-                  onSelect={toggleSelect}
-                />
-              ))}
-            </div>
+          {hooks.length > 0 && (
+            <>
+              <div className="space-y-3">
+                {hooks.map((hook) => (
+                  <HookCard
+                    key={hook.id}
+                    hook={hook}
+                    selectable
+                    selected={selectedIds.has(hook.id)}
+                    onSelect={toggleSelect}
+                  />
+                ))}
+              </div>
 
-            <div className="flex gap-3">
-              <Button
-                onClick={() =>
-                  createSlidesMutation.mutate({
-                    hookIds: Array.from(selectedIds),
-                  })
-                }
-                disabled={
-                  selectedIds.size === 0 || createSlidesMutation.isPending
-                }
-              >
-                {createSlidesMutation.isPending
-                  ? "Starting..."
-                  : `Create Slides (${selectedIds.size})`}
-              </Button>
-              <Button variant="ghost" onClick={() => setStep(1)}>
-                Back
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+              <div className="flex items-center gap-3 pt-2 border-t">
+                <Button
+                  onClick={() =>
+                    createSlidesMutation.mutate({
+                      hookIds: Array.from(selectedIds),
+                    })
+                  }
+                  disabled={
+                    selectedIds.size === 0 || createSlidesMutation.isPending
+                  }
+                >
+                  {createSlidesMutation.isPending
+                    ? "Starting..."
+                    : `Create Slides (${selectedIds.size})`}
+                </Button>
+                <Button
+                  variant="destructive"
+                  onClick={() =>
+                    deleteMutation.mutate({
+                      ids: Array.from(selectedIds),
+                    })
+                  }
+                  disabled={
+                    selectedIds.size === 0 || deleteMutation.isPending
+                  }
+                >
+                  <Trash2 className="h-4 w-4 mr-1" />
+                  {deleteMutation.isPending
+                    ? "Deleting..."
+                    : `Delete (${selectedIds.size})`}
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  {selectedIds.size}/{hooks.length} selected
+                </span>
+              </div>
+            </>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
 
-      {step === 3 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Step 3: Generating Slides</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <GenerationProgress jobIds={jobIds} />
-            <div className="flex gap-3">
-              <Button variant="outline" onClick={() => setStep(1)}>
-                Generate More
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      )}
+function HookGenerationBanner({
+  jobs,
+}: {
+  jobs: { id: number; status: string; progress: number | null; total: number | null; error: string | null }[];
+}) {
+  const job = jobs[0];
+  if (!job) return null;
+
+  const progress =
+    job.total && job.total > 0
+      ? Math.round(((job.progress ?? 0) / job.total) * 100)
+      : undefined;
+
+  return (
+    <div className="flex items-center gap-3 rounded-lg border bg-primary/5 px-4 py-3">
+      <Loader2 className="h-4 w-4 animate-spin text-primary shrink-0" />
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium">Generating hooks...</p>
+        {progress !== undefined && (
+          <Progress value={progress} className="mt-1.5 h-1.5" />
+        )}
+      </div>
+      <Badge variant="secondary" className="shrink-0">
+        {job.status}
+      </Badge>
+    </div>
+  );
+}
+
+function SlideGenerationBanner({
+  jobs,
+}: {
+  jobs: { id: number; status: string; currentSlide: number | null; totalSlides: number | null }[];
+}) {
+  const completed = jobs.filter(
+    (j) => j.status === "completed"
+  ).length;
+
+  return (
+    <div className="flex items-center gap-3 rounded-lg border bg-blue-500/5 px-4 py-3">
+      <Loader2 className="h-4 w-4 animate-spin text-blue-500 shrink-0" />
+      <div className="flex-1 min-w-0">
+        <p className="text-sm font-medium">
+          Generating slides ({completed}/{jobs.length} complete)
+        </p>
+        <Progress
+          value={(completed / jobs.length) * 100}
+          className="mt-1.5 h-1.5"
+        />
+      </div>
+      <Badge variant="secondary" className="shrink-0">
+        {jobs.length} job{jobs.length !== 1 ? "s" : ""}
+      </Badge>
     </div>
   );
 }

@@ -82,7 +82,14 @@ function PostDetailPage() {
       </div>
 
       {post.slides && post.slides.length > 0 && (
-        <SlidePreviewer slides={post.slides} postId={post.id} />
+        <SlidePreviewer
+          slides={post.slides}
+          cleanSlides={post.cleanSlides}
+          postId={post.id}
+          editable={isPending}
+          slideTextOverlays={post.slideTextOverlays}
+          hookSlideTexts={hook?.slideTexts as string[] | null}
+        />
       )}
 
       {hook && (

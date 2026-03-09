@@ -308,7 +308,7 @@ export const analyticsRouter = router({
               text: v.text,
               formula: v.formula,
               slideTexts: v.slideTexts,
-              sceneDescription: v.sceneDescription,
+              sceneDescriptions: v.sceneDescriptions,
               parentHookId: hookData.id,
               status: "draft",
             });
