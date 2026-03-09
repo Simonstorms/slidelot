@@ -7,7 +7,7 @@ import {
 } from "@marketing-ai/db/schema";
 import { eq, inArray } from "drizzle-orm";
 import { z } from "zod";
-import { generateAllSlides } from "../services/openai-image";
+import { generateAllSlides } from "../services/fal-image";
 import { processAllSlides } from "../services/image-processor";
 import { generateCaption } from "../services/claude";
 import { env } from "@marketing-ai/env/server";
@@ -22,7 +22,7 @@ export async function runGenerationJob(
 ) {
   try {
     const [hook] = await db.select().from(hooks).where(eq(hooks.id, hookId));
-    if (!hook || !hook.slideTexts || !hook.sceneDescription) {
+    if (!hook || !hook.slideTexts || !hook.sceneDescriptions) {
       throw new Error("Hook missing required data");
     }
 
@@ -35,7 +35,7 @@ export async function runGenerationJob(
     const tempDir = join(uploadsDir, "temp", String(postId));
 
     const rawPaths = await generateAllSlides(
-      hook.sceneDescription,
+      hook.sceneDescriptions,
       hook.slideTexts,
       jobId,
       tempDir
@@ -46,7 +46,7 @@ export async function runGenerationJob(
       .set({ status: "processing", updatedAt: new Date() })
       .where(eq(generationJobs.id, jobId));
 
-    const slidePaths = await processAllSlides(
+    const { slides: slidePaths, cleanSlides } = await processAllSlides(
       rawPaths,
       hook.slideTexts,
       postId,
@@ -77,6 +77,7 @@ export async function runGenerationJob(
       .update(posts)
       .set({
         slides: slidePaths,
+        cleanSlides,
         caption,
         status: "pending",
         updatedAt: new Date(),
@@ -142,6 +143,14 @@ export const generationRouter = router({
         .select()
         .from(generationJobs)
         .where(inArray(generationJobs.id, input.jobIds));
+    }),
+
+  active: publicProcedure
+    .query(async ({ ctx }) => {
+      return ctx.db
+        .select()
+        .from(generationJobs)
+        .where(inArray(generationJobs.status, ["pending", "generating", "processing", "captioning"]));
     }),
 
   retry: publicProcedure

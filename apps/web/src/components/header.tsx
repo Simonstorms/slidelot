@@ -7,6 +7,7 @@ export default function Header() {
     { to: "/queue", label: "Queue" },
     { to: "/hooks", label: "Hooks" },
     { to: "/analytics", label: "Analytics" },
+    { to: "/image-test", label: "Image Test" },
     { to: "/settings", label: "Settings" },
   ] as const;
 

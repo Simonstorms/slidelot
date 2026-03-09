@@ -9,7 +9,7 @@ export const env = createEnv({
     CORS_ORIGIN: z.url(),
 
     ANTHROPIC_API_KEY: z.string(),
-    OPENAI_API_KEY: z.string(),
+    FAL_API_KEY: z.string(),
 
     POSTIZ_API_KEY: z.string().optional(),
     POSTIZ_INTEGRATION_ID: z.string().optional(),

@@ -5,6 +5,8 @@ import { z } from "zod";
 import { postDraft } from "../services/postiz";
 import { env } from "@marketing-ai/env/server";
 import { runGenerationJob } from "./generation";
+import { join } from "node:path";
+import { reprocessSingleSlide } from "../services/image-processor";
 
 export const postsRouter = router({
   list: publicProcedure
@@ -152,6 +154,7 @@ export const postsRouter = router({
         .set({
           status: "generating",
           slides: null,
+          cleanSlides: null,
           caption: null,
           updatedAt: new Date(),
         })
@@ -171,5 +174,69 @@ export const postsRouter = router({
       runGenerationJob(job.id, post.hookId, post.id, ctx.db);
 
       return { hookId: post.hookId, postId: post.id, jobId: job.id };
+    }),
+
+  updateSlideText: publicProcedure
+    .input(
+      z.object({
+        postId: z.number(),
+        slideIndex: z.number(),
+        text: z.string(),
+        xPercent: z.number().min(0).max(100),
+        yPercent: z.number().min(0).max(100),
+        fontScale: z.number().min(0.2).max(5).default(1),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const [result] = await ctx.db
+        .select({ post: posts, hook: hooks })
+        .from(posts)
+        .leftJoin(hooks, eq(posts.hookId, hooks.id))
+        .where(eq(posts.id, input.postId));
+
+      if (!result) throw new Error("Post not found");
+      const { post, hook } = result;
+
+      const cleanSlides = post.cleanSlides as string[] | null;
+      const slides = post.slides as string[] | null;
+      const cleanSlide = cleanSlides?.[input.slideIndex];
+      const slide = slides?.[input.slideIndex];
+      if (!cleanSlide || !slide) {
+        throw new Error("Slide not found");
+      }
+
+      const cleanSlidePath = join(env.UPLOADS_DIR, cleanSlide);
+      const outputPath = join(env.UPLOADS_DIR, slide);
+
+      await reprocessSingleSlide(
+        cleanSlidePath,
+        outputPath,
+        input.text,
+        input.xPercent,
+        input.yPercent,
+        input.fontScale
+      );
+
+      const hookSlideTexts = (hook?.slideTexts as string[] | null) ?? [];
+      const existing = (post.slideTextOverlays as { text: string; xPercent: number; yPercent: number; fontScale: number }[] | null)
+        ?? hookSlideTexts.map((t) => ({ text: t, xPercent: 50, yPercent: 30, fontScale: 1 }));
+
+      const overlays = [...existing];
+      while (overlays.length <= input.slideIndex) {
+        overlays.push({ text: "", xPercent: 50, yPercent: 30, fontScale: 1 });
+      }
+      overlays[input.slideIndex] = {
+        text: input.text,
+        xPercent: input.xPercent,
+        yPercent: input.yPercent,
+        fontScale: input.fontScale,
+      };
+
+      await ctx.db
+        .update(posts)
+        .set({ slideTextOverlays: overlays, updatedAt: new Date() })
+        .where(eq(posts.id, input.postId));
+
+      return { slidePath: `${slide}?t=${Date.now()}` };
     }),
 });

@@ -14,7 +14,7 @@ export const hooks = sqliteTable("hooks", {
   text: text("text").notNull(),
   formula: text("formula"),
   slideTexts: text("slide_texts", { mode: "json" }).$type<string[]>(),
-  sceneDescription: text("scene_description"),
+  sceneDescriptions: text("scene_descriptions", { mode: "json" }).$type<string[]>(),
   caption: text("caption"),
   viewCount: integer("view_count").default(0),
   score: integer("score").default(0),
@@ -49,6 +49,9 @@ export const posts = sqliteTable("posts", {
     .notNull()
     .default("generating"),
   slides: text("slides", { mode: "json" }).$type<string[]>(),
+  cleanSlides: text("clean_slides", { mode: "json" }).$type<string[]>(),
+  slideTextOverlays: text("slide_text_overlays", { mode: "json" })
+    .$type<{ text: string; xPercent: number; yPercent: number; fontScale: number }[]>(),
   caption: text("caption"),
   postizId: text("postiz_id"),
   rejectionReason: text("rejection_reason"),
@@ -95,6 +98,47 @@ export const learnings = sqliteTable("learnings", {
     .default(sql`(unixepoch())`),
 });
 
+export const imageTests = sqliteTable("image_tests", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  prompt: text("prompt").notNull(),
+  model: text("model").notNull(),
+  style: text("style"),
+  status: text("status", {
+    enum: ["pending", "generating", "completed", "failed"],
+  })
+    .notNull()
+    .default("pending"),
+  imageUrl: text("image_url"),
+  error: text("error"),
+  hookId: integer("hook_id").references(() => hooks.id),
+  batchId: text("batch_id"),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+});
+
+export const bgJobs = sqliteTable("bg_jobs", {
+  id: integer("id").primaryKey({ autoIncrement: true }),
+  type: text("type", {
+    enum: ["hook_generation", "slide_generation", "image_test"],
+  }).notNull(),
+  status: text("status", {
+    enum: ["pending", "running", "completed", "failed"],
+  })
+    .notNull()
+    .default("pending"),
+  input: text("input", { mode: "json" }).$type<Record<string, unknown>>(),
+  progress: integer("progress").default(0),
+  total: integer("total").default(0),
+  error: text("error"),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+});
+
 export const generationJobs = sqliteTable("generation_jobs", {
   id: integer("id").primaryKey({ autoIncrement: true }),
   hookId: integer("hook_id")
@@ -107,7 +151,7 @@ export const generationJobs = sqliteTable("generation_jobs", {
     .notNull()
     .default("pending"),
   currentSlide: integer("current_slide").default(0),
-  totalSlides: integer("total_slides").default(6),
+  totalSlides: integer("total_slides").default(4),
   error: text("error"),
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()

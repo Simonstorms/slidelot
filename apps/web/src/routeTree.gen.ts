@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as QueueRouteImport } from './routes/queue'
+import { Route as ImageTestRouteImport } from './routes/image-test'
 import { Route as HooksRouteImport } from './routes/hooks'
 import { Route as GenerateRouteImport } from './routes/generate'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
@@ -25,6 +26,11 @@ const SettingsRoute = SettingsRouteImport.update({
 const QueueRoute = QueueRouteImport.update({
   id: '/queue',
   path: '/queue',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ImageTestRoute = ImageTestRouteImport.update({
+  id: '/image-test',
+  path: '/image-test',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HooksRoute = HooksRouteImport.update({
@@ -58,6 +64,7 @@ export interface FileRoutesByFullPath {
   '/analytics': typeof AnalyticsRoute
   '/generate': typeof GenerateRoute
   '/hooks': typeof HooksRoute
+  '/image-test': typeof ImageTestRoute
   '/queue': typeof QueueRoute
   '/settings': typeof SettingsRoute
   '/post/$postId': typeof PostPostIdRoute
@@ -67,6 +74,7 @@ export interface FileRoutesByTo {
   '/analytics': typeof AnalyticsRoute
   '/generate': typeof GenerateRoute
   '/hooks': typeof HooksRoute
+  '/image-test': typeof ImageTestRoute
   '/queue': typeof QueueRoute
   '/settings': typeof SettingsRoute
   '/post/$postId': typeof PostPostIdRoute
@@ -77,6 +85,7 @@ export interface FileRoutesById {
   '/analytics': typeof AnalyticsRoute
   '/generate': typeof GenerateRoute
   '/hooks': typeof HooksRoute
+  '/image-test': typeof ImageTestRoute
   '/queue': typeof QueueRoute
   '/settings': typeof SettingsRoute
   '/post/$postId': typeof PostPostIdRoute
@@ -88,6 +97,7 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/generate'
     | '/hooks'
+    | '/image-test'
     | '/queue'
     | '/settings'
     | '/post/$postId'
@@ -97,6 +107,7 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/generate'
     | '/hooks'
+    | '/image-test'
     | '/queue'
     | '/settings'
     | '/post/$postId'
@@ -106,6 +117,7 @@ export interface FileRouteTypes {
     | '/analytics'
     | '/generate'
     | '/hooks'
+    | '/image-test'
     | '/queue'
     | '/settings'
     | '/post/$postId'
@@ -116,6 +128,7 @@ export interface RootRouteChildren {
   AnalyticsRoute: typeof AnalyticsRoute
   GenerateRoute: typeof GenerateRoute
   HooksRoute: typeof HooksRoute
+  ImageTestRoute: typeof ImageTestRoute
   QueueRoute: typeof QueueRoute
   SettingsRoute: typeof SettingsRoute
   PostPostIdRoute: typeof PostPostIdRoute
@@ -135,6 +148,13 @@ declare module '@tanstack/react-router' {
       path: '/queue'
       fullPath: '/queue'
       preLoaderRoute: typeof QueueRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/image-test': {
+      id: '/image-test'
+      path: '/image-test'
+      fullPath: '/image-test'
+      preLoaderRoute: typeof ImageTestRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/hooks': {
@@ -180,6 +200,7 @@ const rootRouteChildren: RootRouteChildren = {
   AnalyticsRoute: AnalyticsRoute,
   GenerateRoute: GenerateRoute,
   HooksRoute: HooksRoute,
+  ImageTestRoute: ImageTestRoute,
   QueueRoute: QueueRoute,
   SettingsRoute: SettingsRoute,
   PostPostIdRoute: PostPostIdRoute,

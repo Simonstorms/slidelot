@@ -6,7 +6,7 @@ import { Badge } from "@/components/ui/badge";
 const stageLabels: Record<string, string> = {
   pending: "Queued",
   generating: "Generating images",
-  processing: "Adding text overlays",
+  processing: "Processing images",
   captioning: "Writing caption",
   completed: "Done",
   failed: "Failed",
@@ -36,7 +36,7 @@ export function GenerationProgress({ jobIds }: { jobIds: number[] }) {
       if (j.status === "captioning") return sum + 90;
       if (j.status === "processing") return sum + 75;
       if (j.status === "generating")
-        return sum + ((j.currentSlide ?? 0) / (j.totalSlides ?? 6)) * 70;
+        return sum + ((j.currentSlide ?? 0) / (j.totalSlides ?? 4)) * 70;
       return sum;
     }, 0) / jobs.length;
 

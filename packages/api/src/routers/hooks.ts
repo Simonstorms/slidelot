@@ -1,15 +1,17 @@
 import { router, publicProcedure } from "../index";
-import { hooks, settings } from "@marketing-ai/db/schema";
-import { eq, desc } from "drizzle-orm";
+import { hooks, settings, posts, generationJobs, learnings, imageTests } from "@marketing-ai/db/schema";
+import { db } from "@marketing-ai/db";
+import { eq, desc, inArray } from "drizzle-orm";
 import { z } from "zod";
 import {
   generateWithRecursiveImprovement,
   generateWinnerVariations,
 } from "../services/claude";
+import { createBgJob, updateBgJob } from "../services/bg-jobs";
 import type { db as dbType } from "@marketing-ai/db";
 
-async function getSettingsFromDb(db: typeof dbType) {
-  const rows = await db.select().from(settings);
+async function getSettingsFromDb(database: typeof dbType) {
+  const rows = await database.select().from(settings);
   const result: Record<string, string> = {};
   for (const row of rows) {
     result[row.key] = row.value;
@@ -22,6 +24,60 @@ async function getSettingsFromDb(db: typeof dbType) {
     ctaStyle: result.ctaStyle ?? "soft",
     productUrl: result.productUrl ?? "",
   };
+}
+
+async function runHookGeneration(jobId: number, count: number) {
+  try {
+    await updateBgJob(jobId, { status: "running" });
+
+    const s = await getSettingsFromDb(db);
+    const generated = await generateWithRecursiveImprovement(s, count);
+
+    for (const hook of generated) {
+      await db.insert(hooks).values({
+        text: hook.text,
+        formula: hook.formula,
+        slideTexts: hook.slideTexts,
+        sceneDescriptions: hook.sceneDescriptions,
+        score: hook.score,
+        scoreBreakdown: hook.scoreBreakdown,
+        status: "draft",
+      });
+    }
+
+    await updateBgJob(jobId, { status: "completed", progress: count });
+  } catch (e) {
+    const error = e instanceof Error ? e.message : "Unknown error";
+    await updateBgJob(jobId, { status: "failed", error });
+  }
+}
+
+async function runVariationGeneration(jobId: number, hookId: number) {
+  try {
+    await updateBgJob(jobId, { status: "running" });
+
+    const s = await getSettingsFromDb(db);
+    const variations = await generateWinnerVariations(hookId, s);
+
+    for (const v of variations) {
+      await db.insert(hooks).values({
+        text: v.text,
+        formula: v.formula,
+        slideTexts: v.slideTexts,
+        sceneDescriptions: v.sceneDescriptions,
+        parentHookId: hookId,
+        status: "draft",
+      });
+    }
+
+    await updateBgJob(jobId, {
+      status: "completed",
+      progress: variations.length,
+    });
+  } catch (e) {
+    const error = e instanceof Error ? e.message : "Unknown error";
+    await updateBgJob(jobId, { status: "failed", error });
+  }
 }
 
 export const hooksRouter = router({
@@ -61,32 +117,14 @@ export const hooksRouter = router({
 
   generate: publicProcedure
     .input(z.object({ count: z.number().min(1).max(20).default(5) }))
-    .mutation(async ({ ctx, input }) => {
-      const s = await getSettingsFromDb(ctx.db);
-
-      const generated = await generateWithRecursiveImprovement(
-        s,
+    .mutation(async ({ input }) => {
+      const job = await createBgJob(
+        "hook_generation",
+        { count: input.count },
         input.count
       );
-
-      const inserted = [];
-      for (const hook of generated) {
-        const [row] = await ctx.db
-          .insert(hooks)
-          .values({
-            text: hook.text,
-            formula: hook.formula,
-            slideTexts: hook.slideTexts,
-            sceneDescription: hook.sceneDescription,
-            score: hook.score,
-            scoreBreakdown: hook.scoreBreakdown,
-            status: "draft",
-          })
-          .returning();
-        inserted.push(row);
-      }
-
-      return inserted;
+      runHookGeneration(job.id, input.count);
+      return { jobId: job.id };
     }),
 
   update: publicProcedure
@@ -96,7 +134,7 @@ export const hooksRouter = router({
         text: z.string().optional(),
         formula: z.string().optional(),
         slideTexts: z.array(z.string()).optional(),
-        sceneDescription: z.string().optional(),
+        sceneDescriptions: z.array(z.string()).optional(),
         status: z.enum(["draft", "untested", "winner", "loser"]).optional(),
       })
     )
@@ -114,28 +152,26 @@ export const hooksRouter = router({
       await ctx.db.delete(hooks).where(eq(hooks.id, input.id));
     }),
 
+  deleteMany: publicProcedure
+    .input(z.object({ ids: z.array(z.number()) }))
+    .mutation(async ({ ctx, input }) => {
+      if (input.ids.length === 0) return;
+      await ctx.db.delete(generationJobs).where(inArray(generationJobs.hookId, input.ids));
+      await ctx.db.delete(posts).where(inArray(posts.hookId, input.ids));
+      await ctx.db.delete(learnings).where(inArray(learnings.hookId, input.ids));
+      await ctx.db.delete(imageTests).where(inArray(imageTests.hookId, input.ids));
+      await ctx.db.delete(hooks).where(inArray(hooks.id, input.ids));
+    }),
+
   generateVariations: publicProcedure
     .input(z.object({ hookId: z.number() }))
-    .mutation(async ({ ctx, input }) => {
-      const s = await getSettingsFromDb(ctx.db);
-      const variations = await generateWinnerVariations(input.hookId, s);
-
-      const inserted = [];
-      for (const v of variations) {
-        const [row] = await ctx.db
-          .insert(hooks)
-          .values({
-            text: v.text,
-            formula: v.formula,
-            slideTexts: v.slideTexts,
-            sceneDescription: v.sceneDescription,
-            parentHookId: input.hookId,
-            status: "draft",
-          })
-          .returning();
-        inserted.push(row);
-      }
-
-      return inserted;
+    .mutation(async ({ input }) => {
+      const job = await createBgJob(
+        "hook_generation",
+        { hookId: input.hookId, type: "variations" },
+        3
+      );
+      runVariationGeneration(job.id, input.hookId);
+      return { jobId: job.id };
     }),
 });
