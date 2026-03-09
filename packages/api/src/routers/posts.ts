@@ -1,9 +1,9 @@
 import { router, publicProcedure } from "../index";
-import { posts, hooks, analytics, generationJobs } from "@marketing-ai/db/schema";
+import { posts, hooks, analytics, generationJobs } from "@slidelot/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { z } from "zod";
 import { postDraft } from "../services/postiz";
-import { env } from "@marketing-ai/env/server";
+import { env } from "@slidelot/env/server";
 import { runGenerationJob } from "./generation";
 import { join } from "node:path";
 import { reprocessSingleSlide } from "../services/image-processor";

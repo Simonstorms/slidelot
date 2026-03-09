@@ -1,80 +1,52 @@
 # Slidelot
 
-Open-source Tikto Slide generator
+Open-source TikTok carousel generator with auto-learning feedback loops. Generate viral hooks, create slideshows, post drafts, and improve from analytics — all for ~$0.30/post.
 
 <img width="977" height="855" alt="Screenshot 2026-03-09 at 14 18 40" src="https://github.com/user-attachments/assets/bc17e04f-d7f1-4d1c-9dd8-ad8667889454" />
 
+## What it does
 
+1. **Generate hooks** — Claude generates scroll-stopping hook texts based on your niche
+2. **Create slides** — Each hook becomes a 6-slide carousel (AI images + text overlays)
+3. **Review & approve** — Swipe through a queue, edit/reject/approve posts
+4. **Post to TikTok** — Approved posts get pushed as drafts via Postiz (you add music)
+5. **Learn & improve** — Analytics feed back into the system, tracking winners and losers
 
-## Features
+## Why slideshows?
 
-- **TypeScript** - For type safety and improved developer experience
-- **TanStack Router** - File-based routing with full type safety
-- **TailwindCSS** - Utility-first CSS for rapid UI development
-- **shadcn/ui** - Reusable UI components
-- **Hono** - Lightweight, performant server framework
-- **tRPC** - End-to-end type-safe APIs
-- **Bun** - Runtime environment
-- **Drizzle** - TypeScript-first ORM
-- **SQLite/Turso** - Database engine
-- **Turborepo** - Optimized monorepo build system
+Carousels get 2.9x more comments, 1.9x more likes, and 2.6x more shares than video on TikTok. They cost ~$0.30 vs $2-10 for AI video, enabling a 2-3 posts/day strategy.
 
-## Getting Started
+## Tech stack
 
-First, install the dependencies:
+React 19 · Hono · tRPC · Drizzle · SQLite · TanStack Router · Tailwind CSS · shadcn/ui · Bun · Turborepo
+
+**AI services:** Claude Sonnet (hooks/captions) · FAL.ai (image generation — FLUX, Recraft, GPT Image, Imagen) · Sharp (text overlays)
+
+## Getting started
 
 ```bash
 bun install
-```
-
-## Database Setup
-
-This project uses SQLite with Drizzle ORM.
-
-1. Start the local SQLite database (optional):
-
-```bash
-bun run db:local
-```
-
-2. Update your `.env` file in the `apps/server` directory with the appropriate connection details if needed.
-
-3. Apply the schema to your database:
-
-```bash
+cp apps/server/.env.example apps/server/.env  # add your API keys
 bun run db:push
-```
-
-Then, run the development server:
-
-```bash
 bun run dev
 ```
 
-Open [http://localhost:3001](http://localhost:3001) in your browser to see the web application.
-The API is running at [http://localhost:3000](http://localhost:3000).
+Web UI at [localhost:3001](http://localhost:3001), API at [localhost:3000](http://localhost:3000).
 
-## Project Structure
+## Project structure
 
 ```
-marketing-ai/
+slidelot/
 ├── apps/
-│   ├── web/         # Frontend application (React + TanStack Router)
-│   └── server/      # Backend API (Hono, TRPC)
+│   ├── web/          # React frontend
+│   └── server/       # Hono API server
 ├── packages/
-│   ├── api/         # API layer / business logic
-│   └── db/          # Database schema & queries
+│   ├── api/          # tRPC routers + services (Claude, FAL, Postiz)
+│   ├── db/           # Drizzle schema + migrations
+│   ├── env/          # Environment validation
+│   └── config/       # Shared TypeScript config
 ```
 
-## Available Scripts
+## License
 
-- `bun run dev`: Start all applications in development mode
-- `bun run build`: Build all applications
-- `bun run dev:web`: Start only the web application
-- `bun run dev:server`: Start only the server
-- `bun run check-types`: Check TypeScript types across all apps
-- `bun run db:push`: Push schema changes to database
-- `bun run db:generate`: Generate database client/types
-- `bun run db:migrate`: Run database migrations
-- `bun run db:studio`: Open database studio UI
-- `bun run db:local`: Start the local SQLite database
+MIT

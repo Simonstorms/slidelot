@@ -4,11 +4,10 @@ import { hooksRouter } from "./hooks";
 import { postsRouter } from "./posts";
 import { generationRouter } from "./generation";
 import { analyticsRouter } from "./analytics";
-import { imageTestRouter } from "./image-test";
 import { bgJobsRouter } from "./bg-jobs";
-import { generationJobs, posts, imageTests } from "@marketing-ai/db/schema";
+import { generationJobs, posts } from "@slidelot/db/schema";
 import { inArray } from "drizzle-orm";
-import type { db as dbType } from "@marketing-ai/db";
+import type { db as dbType } from "@slidelot/db";
 import { recoverStaleBgJobs } from "../services/bg-jobs";
 
 export async function recoverOrphanedJobs(db: typeof dbType) {
@@ -41,18 +40,6 @@ export async function recoverOrphanedJobs(db: typeof dbType) {
     console.log(`Marked ${orphanedPosts.length} orphaned post(s) as failed`);
   }
 
-  const staleTests = await db
-    .select({ id: imageTests.id })
-    .from(imageTests)
-    .where(inArray(imageTests.status, ["pending", "generating"]));
-
-  if (staleTests.length > 0) {
-    await db
-      .update(imageTests)
-      .set({ status: "failed", error: "Server restarted during generation" })
-      .where(inArray(imageTests.id, staleTests.map((t) => t.id)));
-    console.log(`Marked ${staleTests.length} stale image test(s) as failed`);
-  }
 }
 
 export const appRouter = router({
@@ -64,7 +51,6 @@ export const appRouter = router({
   posts: postsRouter,
   generation: generationRouter,
   analytics: analyticsRouter,
-  imageTest: imageTestRouter,
   bgJobs: bgJobsRouter,
 });
 

@@ -21,17 +21,22 @@ export const Route = createRootRouteWithContext<RouterAppContext>()({
   head: () => ({
     meta: [
       {
-        title: "marketing-ai",
+        title: "slidelot",
       },
       {
         name: "description",
-        content: "marketing-ai is a web application",
+        content: "slidelot is a web application",
       },
     ],
     links: [
       {
         rel: "icon",
+        type: "image/x-icon",
         href: "/favicon.ico",
+      },
+      {
+        rel: "apple-touch-icon",
+        href: "/apple-touch-icon.png",
       },
     ],
   }),

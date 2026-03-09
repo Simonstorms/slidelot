@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { env } from "@marketing-ai/env/web";
+import { env } from "@slidelot/env/web";
 
 export const Route = createFileRoute("/queue")({
   loader: ({ context }) =>

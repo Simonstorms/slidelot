@@ -1,5 +1,5 @@
 {
-  "name": "@marketing-ai/env",
+  "name": "@slidelot/env",
   "version": "0.0.0",
   "private": true,
   "type": "module",
@@ -13,7 +13,7 @@
     "zod": "catalog:"
   },
   "devDependencies": {
-    "@marketing-ai/config": "workspace:*",
+    "@slidelot/config": "workspace:*",
     "@types/bun": "catalog:",
     "typescript": "catalog:"
   }

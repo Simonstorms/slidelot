@@ -1,12 +1,24 @@
 import { fal } from "@fal-ai/client";
-import { env } from "@marketing-ai/env/server";
-import { db } from "@marketing-ai/db";
-import { generationJobs } from "@marketing-ai/db/schema";
+import { db } from "@slidelot/db";
+import { generationJobs } from "@slidelot/db/schema";
 import { eq } from "drizzle-orm";
 import { mkdir, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import { getRequiredApiKey, onReset } from "./api-keys";
 
-fal.config({ credentials: env.FAL_API_KEY });
+let falConfigured = false;
+
+async function ensureFalConfig() {
+  if (!falConfigured) {
+    const apiKey = await getRequiredApiKey("FAL_API_KEY");
+    fal.config({ credentials: apiKey });
+    falConfigured = true;
+  }
+}
+
+onReset(() => {
+  falConfigured = false;
+});
 
 const FAL_MODELS = {
   "flux-schnell": "fal-ai/flux/schnell",
@@ -93,6 +105,7 @@ function buildInput(prompt: string, model: FalModel) {
 }
 
 async function callFal(prompt: string, model: FalModel) {
+  await ensureFalConfig();
   const modelId = getModelId(model);
 
   const result = await fal.subscribe(modelId, {

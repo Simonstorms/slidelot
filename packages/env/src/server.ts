@@ -8,8 +8,8 @@ export const env = createEnv({
     DATABASE_URL: z.string().min(1),
     CORS_ORIGIN: z.url(),
 
-    ANTHROPIC_API_KEY: z.string(),
-    FAL_API_KEY: z.string(),
+    ANTHROPIC_API_KEY: z.string().optional(),
+    FAL_API_KEY: z.string().optional(),
 
     POSTIZ_API_KEY: z.string().optional(),
     POSTIZ_INTEGRATION_ID: z.string().optional(),

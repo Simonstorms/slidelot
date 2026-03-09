@@ -1,5 +1,5 @@
 import type { Context as HonoContext } from "hono";
-import { db } from "@marketing-ai/db";
+import { db } from "@slidelot/db";
 
 export type CreateContextOptions = {
   context: HonoContext;
