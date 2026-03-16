@@ -11,6 +11,7 @@ const apiKeyNames = z.enum([
   "FAL_API_KEY",
   "POSTIZ_API_KEY",
   "POSTIZ_INTEGRATION_ID",
+  "RAPIDAPI_KEY",
   "REVENUECAT_API_KEY",
 ]);
 

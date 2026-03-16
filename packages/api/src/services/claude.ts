@@ -105,7 +105,8 @@ For each hook, provide:
 4. "sceneDescriptions" - Array of exactly 4 short scene descriptions for an AI image generator. Keep each under 15 words. Just describe a simple aesthetic scene — a mood, a vibe, a setting. No product references, no text, no topic-specific visuals.
 
 RULES FOR SLIDE TEXTS:
-- Each slide should be 4-8 words max
+- Each slide must be 40 characters or fewer (strict limit)
+- Aim for 4-6 words per slide
 - Build a narrative arc: hook → problem/agitation → solution → CTA
 - The CTA should naturally mention ${settings.productName} without being salesy
 - Last slide CTA style: ${settings.ctaStyle}
@@ -201,7 +202,7 @@ PRODUCT: ${settings.productName} - ${settings.productDescription}
 AUDIENCE: ${settings.targetAudience}
 NICHE: ${settings.niche}
 
-Rewrite the hook and all 4 slide texts to address the weak areas. Keep what works, fix what doesn't.
+Rewrite the hook and all 4 slide texts to address the weak areas. Keep what works, fix what doesn't. Each slide text must be 40 characters or fewer.
 
 For sceneDescriptions, write 4 short aesthetic scene descriptions (under 15 words each). Simple vibes, no product references.
 

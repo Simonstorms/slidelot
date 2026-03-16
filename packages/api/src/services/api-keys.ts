@@ -7,6 +7,7 @@ const API_KEY_NAMES = [
   "FAL_API_KEY",
   "POSTIZ_API_KEY",
   "POSTIZ_INTEGRATION_ID",
+  "RAPIDAPI_KEY",
   "REVENUECAT_API_KEY",
 ] as const;
 

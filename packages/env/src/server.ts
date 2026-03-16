@@ -14,6 +14,7 @@ export const env = createEnv({
     POSTIZ_API_KEY: z.string().optional(),
     POSTIZ_INTEGRATION_ID: z.string().optional(),
 
+    RAPIDAPI_KEY: z.string().optional(),
     REVENUECAT_API_KEY: z.string().optional(),
 
     UPLOADS_DIR: z.string().default("./uploads"),

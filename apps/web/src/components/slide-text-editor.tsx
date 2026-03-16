@@ -126,16 +126,16 @@ export function SlideTextEditor({
                     e.currentTarget.blur();
                   }
                 }}
-                className={`font-bold inline ${
+                className={`font-extrabold inline ${
                   editing
                     ? "outline outline-2 outline-primary cursor-text"
                     : ""
                 }`}
                 style={{
-                  color: "white",
-                  backgroundColor: "rgba(0,0,0,0.75)",
-                  borderRadius: "0.25em",
-                  padding: "0.2em 0.4em",
+                  color: "black",
+                  backgroundColor: "white",
+                  borderRadius: "0.35em",
+                  padding: "0.25em 0.5em",
                   boxDecorationBreak: "clone",
                   WebkitBoxDecorationBreak: "clone",
                 }}

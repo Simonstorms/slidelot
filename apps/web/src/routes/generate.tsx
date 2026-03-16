@@ -7,7 +7,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { HookCard } from "@/components/hook-card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Loader2, Sparkles, ImagePlus, Trash2 } from "lucide-react";
+import { Loader2, Sparkles, ImagePlus, Trash2, Camera, Image } from "lucide-react";
+import { PinterestPicker } from "@/components/pinterest-picker";
 
 export const Route = createFileRoute("/generate")({
   component: GeneratePage,
@@ -16,6 +17,8 @@ export const Route = createFileRoute("/generate")({
 function GeneratePage() {
   const [count, setCount] = useState(3);
   const [selectedIds, setSelectedIds] = useState<Set<number>>(new Set());
+  const [imageMode, setImageMode] = useState<"ai" | "pinterest">("ai");
+  const [pinterestPickerOpen, setPinterestPickerOpen] = useState(false);
 
   const activeHookJobsQuery = useQuery({
     ...trpc.bgJobs.active.queryOptions({ type: "hook_generation" }),
@@ -58,6 +61,15 @@ function GeneratePage() {
     ...trpc.hooks.deleteMany.mutationOptions(),
     onSuccess: () => {
       setSelectedIds(new Set());
+      queryClient.invalidateQueries();
+    },
+  });
+
+  const createPinterestSlidesMutation = useMutation({
+    ...trpc.generation.createSlidesFromPinterest.mutationOptions(),
+    onSuccess: () => {
+      setSelectedIds(new Set());
+      setPinterestPickerOpen(false);
       queryClient.invalidateQueries();
     },
   });
@@ -179,20 +191,50 @@ function GeneratePage() {
               </div>
 
               <div className="flex items-center gap-3 pt-2 border-t">
-                <Button
-                  onClick={() =>
-                    createSlidesMutation.mutate({
-                      hookIds: Array.from(selectedIds),
-                    })
-                  }
-                  disabled={
-                    selectedIds.size === 0 || createSlidesMutation.isPending
-                  }
-                >
-                  {createSlidesMutation.isPending
-                    ? "Starting..."
-                    : `Create Slides (${selectedIds.size})`}
-                </Button>
+                {imageMode === "ai" ? (
+                  <Button
+                    onClick={() =>
+                      createSlidesMutation.mutate({
+                        hookIds: Array.from(selectedIds),
+                      })
+                    }
+                    disabled={
+                      selectedIds.size === 0 || createSlidesMutation.isPending
+                    }
+                  >
+                    {createSlidesMutation.isPending
+                      ? "Starting..."
+                      : `Create Slides (${selectedIds.size})`}
+                  </Button>
+                ) : (
+                  <Button
+                    onClick={() => setPinterestPickerOpen(true)}
+                    disabled={selectedIds.size === 0}
+                  >
+                    <Camera className="h-4 w-4 mr-1" />
+                    Pick Pinterest Images ({selectedIds.size})
+                  </Button>
+                )}
+                <div className="flex rounded-md border">
+                  <Button
+                    variant={imageMode === "ai" ? "default" : "ghost"}
+                    size="sm"
+                    className="rounded-r-none"
+                    onClick={() => setImageMode("ai")}
+                  >
+                    <Sparkles className="h-3 w-3 mr-1" />
+                    AI
+                  </Button>
+                  <Button
+                    variant={imageMode === "pinterest" ? "default" : "ghost"}
+                    size="sm"
+                    className="rounded-l-none"
+                    onClick={() => setImageMode("pinterest")}
+                  >
+                    <Image className="h-3 w-3 mr-1" />
+                    Pinterest
+                  </Button>
+                </div>
                 <Button
                   variant="destructive"
                   onClick={() =>
@@ -217,6 +259,16 @@ function GeneratePage() {
           )}
         </CardContent>
       </Card>
+
+      <PinterestPicker
+        hookIds={Array.from(selectedIds)}
+        slideCount={4}
+        open={pinterestPickerOpen}
+        onConfirm={(selections) =>
+          createPinterestSlidesMutation.mutate({ items: selections })
+        }
+        onCancel={() => setPinterestPickerOpen(false)}
+      />
     </div>
   );
 }

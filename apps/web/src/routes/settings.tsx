@@ -43,6 +43,7 @@ const API_KEYS_CONFIG = [
   { name: "FAL_API_KEY" as const, label: "FAL API Key", required: true },
   { name: "POSTIZ_API_KEY" as const, label: "Postiz API Key", required: false },
   { name: "POSTIZ_INTEGRATION_ID" as const, label: "Postiz Integration ID", required: false },
+  { name: "RAPIDAPI_KEY" as const, label: "RapidAPI Key", required: false },
   { name: "REVENUECAT_API_KEY" as const, label: "RevenueCat API Key", required: false },
 ];
 

@@ -10,11 +10,12 @@ function buildTextOverlaySvg(
   yPercent = 30,
   fontScale = 1
 ): Buffer {
-  const fontSize = Math.round(height * 0.04 * fontScale);
+  const fontSize = Math.round(height * 0.045 * fontScale);
   const x = Math.round(width * (xPercent / 100));
   const startY = Math.round(height * (yPercent / 100));
   const maxY = Math.round(height * 0.9);
-  const lineHeight = Math.round(fontSize * 1.35);
+  const lineHeight = Math.round(fontSize * 1.5);
+  const fontFamily = "'Proxima Nova', 'Helvetica Neue', Helvetica, Arial, sans-serif";
 
   const words = text.split(/\s+/);
   const lines: string[] = [];
@@ -22,7 +23,7 @@ function buildTextOverlaySvg(
   for (const word of words) {
     const test = current ? `${current} ${word}` : word;
     const wordCount = test.split(/\s+/).length;
-    if (wordCount > 5 && current) {
+    if (wordCount > 3 && current) {
       lines.push(current);
       current = word;
     } else {
@@ -31,25 +32,52 @@ function buildTextOverlaySvg(
   }
   if (current) lines.push(current);
 
-  const padX = Math.round(fontSize * 0.4);
-  const padY = Math.round(fontSize * 0.2);
-  const borderRadius = Math.round(fontSize * 0.25);
+  const padX = Math.round(fontSize * 0.5);
+  const padY = Math.round(fontSize * 0.25);
+  const borderRadius = Math.round(fontSize * 0.35);
+  const charWidth = fontSize * 0.58;
+  const boxGap = Math.round(fontSize * 0.08);
 
-  const lineElements = lines
-    .map((line, i) => {
-      const y = startY + i * lineHeight;
-      if (y > maxY) return "";
-      const charWidth = fontSize * 0.55;
-      const boxW = Math.round(line.length * charWidth + padX * 2);
-      const boxH = Math.round(fontSize + padY * 2);
-      const boxX = Math.round(x - boxW / 2);
-      const boxY = Math.round(y - fontSize * 0.8 - padY);
-      return `<rect x="${boxX}" y="${boxY}" width="${boxW}" height="${boxH}" rx="${borderRadius}" ry="${borderRadius}" fill="rgba(0,0,0,0.75)"/><text x="${x}" y="${y}" text-anchor="middle" font-family="'Proxima Nova', 'Helvetica Neue', Helvetica, Arial, sans-serif" font-size="${fontSize}" font-weight="700" fill="white">${escapeXml(line)}</text>`;
-    })
-    .filter(Boolean)
-    .join("");
+  const visibleLines = lines.filter((_, i) => startY + i * lineHeight <= maxY);
 
-  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">${lineElements}</svg>`;
+  const boxes = visibleLines.map((line, i) => {
+    const y = startY + i * lineHeight;
+    const boxW = Math.round(line.length * charWidth + padX * 2);
+    const boxH = lineHeight + padY * 2 - boxGap;
+    const boxX = Math.round(x - boxW / 2);
+    const boxY = Math.round(y - fontSize * 0.8 - padY);
+    return { line, y, boxW, boxH, boxX, boxY };
+  });
+
+  let elements = "";
+  for (let i = 0; i < boxes.length; i++) {
+    const b = boxes[i];
+    const prev = boxes[i - 1];
+    const next = boxes[i + 1];
+    const rTop = !prev ? borderRadius : 0;
+    const rBottom = !next ? borderRadius : 0;
+
+    if (rTop === 0 && rBottom === 0) {
+      elements += `<rect x="${b.boxX}" y="${b.boxY}" width="${b.boxW}" height="${b.boxH}" fill="white"/>`;
+    } else {
+      const r1 = rTop, r2 = rTop, r3 = rBottom, r4 = rBottom;
+      elements += `<path d="M${b.boxX + r1},${b.boxY} h${b.boxW - r1 - r2} ${r2 > 0 ? `a${r2},${r2} 0 0 1 ${r2},${r2}` : `l${r2},0`} v${b.boxH - r2 - r3} ${r3 > 0 ? `a${r3},${r3} 0 0 1 -${r3},${r3}` : `l0,${r3}`} h-${b.boxW - r3 - r4} ${r4 > 0 ? `a${r4},${r4} 0 0 1 -${r4},-${r4}` : `l0,-${r4}`} v-${b.boxH - r4 - r1} ${r1 > 0 ? `a${r1},${r1} 0 0 1 ${r1},-${r1}` : `l0,-${r1}`} Z" fill="white"/>`;
+    }
+
+    if (prev) {
+      const overlapY = b.boxY;
+      const left = Math.max(b.boxX, prev.boxX);
+      const right = Math.min(b.boxX + b.boxW, prev.boxX + prev.boxW);
+      if (right > left) {
+        const h = Math.round(fontSize * 0.15);
+        elements += `<rect x="${left}" y="${overlapY - h}" width="${right - left}" height="${h * 2}" fill="white"/>`;
+      }
+    }
+
+    elements += `<text x="${x}" y="${b.y}" text-anchor="middle" font-family="${fontFamily}" font-size="${fontSize}" font-weight="800" fill="black">${escapeXml(b.line)}</text>`;
+  }
+
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}">${elements}</svg>`;
 
   return Buffer.from(svg);
 }

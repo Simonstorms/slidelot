@@ -10,7 +10,6 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as SettingsRouteImport } from './routes/settings'
-import { Route as QueueRouteImport } from './routes/queue'
 import { Route as GenerateRouteImport } from './routes/generate'
 import { Route as AnalyticsRouteImport } from './routes/analytics'
 import { Route as IndexRouteImport } from './routes/index'
@@ -19,11 +18,6 @@ import { Route as PostPostIdRouteImport } from './routes/post.$postId'
 const SettingsRoute = SettingsRouteImport.update({
   id: '/settings',
   path: '/settings',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const QueueRoute = QueueRouteImport.update({
-  id: '/queue',
-  path: '/queue',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GenerateRoute = GenerateRouteImport.update({
@@ -51,7 +45,6 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/analytics': typeof AnalyticsRoute
   '/generate': typeof GenerateRoute
-  '/queue': typeof QueueRoute
   '/settings': typeof SettingsRoute
   '/post/$postId': typeof PostPostIdRoute
 }
@@ -59,7 +52,6 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/analytics': typeof AnalyticsRoute
   '/generate': typeof GenerateRoute
-  '/queue': typeof QueueRoute
   '/settings': typeof SettingsRoute
   '/post/$postId': typeof PostPostIdRoute
 }
@@ -68,33 +60,19 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/analytics': typeof AnalyticsRoute
   '/generate': typeof GenerateRoute
-  '/queue': typeof QueueRoute
   '/settings': typeof SettingsRoute
   '/post/$postId': typeof PostPostIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | '/analytics'
-    | '/generate'
-    | '/queue'
-    | '/settings'
-    | '/post/$postId'
+  fullPaths: '/' | '/analytics' | '/generate' | '/settings' | '/post/$postId'
   fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/'
-    | '/analytics'
-    | '/generate'
-    | '/queue'
-    | '/settings'
-    | '/post/$postId'
+  to: '/' | '/analytics' | '/generate' | '/settings' | '/post/$postId'
   id:
     | '__root__'
     | '/'
     | '/analytics'
     | '/generate'
-    | '/queue'
     | '/settings'
     | '/post/$postId'
   fileRoutesById: FileRoutesById
@@ -103,7 +81,6 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AnalyticsRoute: typeof AnalyticsRoute
   GenerateRoute: typeof GenerateRoute
-  QueueRoute: typeof QueueRoute
   SettingsRoute: typeof SettingsRoute
   PostPostIdRoute: typeof PostPostIdRoute
 }
@@ -115,13 +92,6 @@ declare module '@tanstack/react-router' {
       path: '/settings'
       fullPath: '/settings'
       preLoaderRoute: typeof SettingsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/queue': {
-      id: '/queue'
-      path: '/queue'
-      fullPath: '/queue'
-      preLoaderRoute: typeof QueueRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/generate': {
@@ -159,7 +129,6 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AnalyticsRoute: AnalyticsRoute,
   GenerateRoute: GenerateRoute,
-  QueueRoute: QueueRoute,
   SettingsRoute: SettingsRoute,
   PostPostIdRoute: PostPostIdRoute,
 }

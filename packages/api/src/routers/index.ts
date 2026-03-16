@@ -5,6 +5,7 @@ import { postsRouter } from "./posts";
 import { generationRouter } from "./generation";
 import { analyticsRouter } from "./analytics";
 import { bgJobsRouter } from "./bg-jobs";
+import { pinterestRouter } from "./pinterest";
 import { generationJobs, posts } from "@slidelot/db/schema";
 import { inArray } from "drizzle-orm";
 import type { db as dbType } from "@slidelot/db";
@@ -52,6 +53,7 @@ export const appRouter = router({
   generation: generationRouter,
   analytics: analyticsRouter,
   bgJobs: bgJobsRouter,
+  pinterest: pinterestRouter,
 });
 
 export type AppRouter = typeof appRouter;

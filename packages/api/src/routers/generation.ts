@@ -10,8 +10,10 @@ import { z } from "zod";
 import { generateAllSlides } from "../services/fal-image";
 import { processAllSlides } from "../services/image-processor";
 import { generateCaption } from "../services/claude";
+import { downloadPinterestImage } from "../services/pinterest";
 import { env } from "@slidelot/env/server";
 import { resolve, join } from "node:path";
+import { mkdir, writeFile } from "node:fs/promises";
 import type { db as dbType } from "@slidelot/db";
 
 export async function runGenerationJob(
@@ -40,6 +42,99 @@ export async function runGenerationJob(
       jobId,
       tempDir
     );
+
+    await db
+      .update(generationJobs)
+      .set({ status: "processing", updatedAt: new Date() })
+      .where(eq(generationJobs.id, jobId));
+
+    const { slides: slidePaths, cleanSlides } = await processAllSlides(
+      rawPaths,
+      hook.slideTexts,
+      postId,
+      uploadsDir
+    );
+
+    await db
+      .update(generationJobs)
+      .set({ status: "captioning", updatedAt: new Date() })
+      .where(eq(generationJobs.id, jobId));
+
+    const settingsRows = await db.select().from(settings);
+    const s: Record<string, string> = {};
+    for (const row of settingsRows) {
+      s[row.key] = row.value;
+    }
+
+    const caption = await generateCaption(hook.text, hook.slideTexts, {
+      niche: s.niche ?? "",
+      productName: s.productName ?? "",
+      productDescription: s.productDescription ?? "",
+      targetAudience: s.targetAudience ?? "",
+      ctaStyle: s.ctaStyle ?? "soft",
+      productUrl: s.productUrl ?? "",
+    });
+
+    await db
+      .update(posts)
+      .set({
+        slides: slidePaths,
+        cleanSlides,
+        caption,
+        status: "pending",
+        updatedAt: new Date(),
+      })
+      .where(eq(posts.id, postId));
+
+    await db
+      .update(generationJobs)
+      .set({ status: "completed", updatedAt: new Date() })
+      .where(eq(generationJobs.id, jobId));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "Unknown error";
+    await db
+      .update(generationJobs)
+      .set({ status: "failed", error: message, updatedAt: new Date() })
+      .where(eq(generationJobs.id, jobId));
+
+    await db
+      .update(posts)
+      .set({ status: "failed", updatedAt: new Date() })
+      .where(eq(posts.id, postId));
+  }
+}
+
+export async function runPinterestGenerationJob(
+  jobId: number,
+  hookId: number,
+  postId: number,
+  imageUrls: string[],
+  db: typeof dbType
+) {
+  try {
+    const [hook] = await db.select().from(hooks).where(eq(hooks.id, hookId));
+    if (!hook || !hook.slideTexts) {
+      throw new Error("Hook missing required data");
+    }
+
+    await db
+      .update(generationJobs)
+      .set({ status: "generating", updatedAt: new Date() })
+      .where(eq(generationJobs.id, jobId));
+
+    const uploadsDir = resolve(env.UPLOADS_DIR);
+    const tempDir = join(uploadsDir, "temp", String(postId));
+    await mkdir(tempDir, { recursive: true });
+
+    const rawPaths: string[] = [];
+    for (let i = 0; i < imageUrls.length; i++) {
+      const url = imageUrls[i];
+      if (!url) continue;
+      const buffer = await downloadPinterestImage(url);
+      const path = join(tempDir, `slide-${i + 1}-raw.png`);
+      await writeFile(path, buffer);
+      rawPaths.push(path);
+    }
 
     await db
       .update(generationJobs)
@@ -177,5 +272,52 @@ export const generationRouter = router({
       runGenerationJob(job.id, job.hookId, job.postId, ctx.db);
 
       return { success: true };
+    }),
+
+  createSlidesFromPinterest: publicProcedure
+    .input(
+      z.object({
+        items: z.array(
+          z.object({
+            hookId: z.number(),
+            imageUrls: z.array(z.string().url()).min(1).max(6),
+          })
+        ),
+      })
+    )
+    .mutation(async ({ ctx, input }) => {
+      const jobIds: number[] = [];
+
+      for (const item of input.items) {
+        const [post] = await ctx.db
+          .insert(posts)
+          .values({ hookId: item.hookId, status: "generating" })
+          .returning();
+
+        if (!post) throw new Error("Failed to create post");
+
+        const [job] = await ctx.db
+          .insert(generationJobs)
+          .values({
+            hookId: item.hookId,
+            postId: post.id,
+            status: "pending",
+          })
+          .returning();
+
+        if (!job) throw new Error("Failed to create generation job");
+
+        jobIds.push(job.id);
+
+        runPinterestGenerationJob(
+          job.id,
+          item.hookId,
+          post.id,
+          item.imageUrls,
+          ctx.db
+        );
+      }
+
+      return { jobIds };
     }),
 });
