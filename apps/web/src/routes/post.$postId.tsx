@@ -24,6 +24,16 @@ export const Route = createFileRoute("/post/$postId")({
   component: PostDetailPage,
 });
 
+const statusColors: Record<string, string> = {
+  generating: "bg-yellow-100 text-yellow-800",
+  pending: "bg-blue-100 text-blue-800",
+  approved: "bg-green-100 text-green-800",
+  pipeline: "bg-purple-100 text-purple-800",
+  posted: "bg-emerald-100 text-emerald-800",
+  rejected: "bg-red-100 text-red-800",
+  failed: "bg-destructive/10 text-destructive",
+};
+
 function PostDetailPage() {
   const { postId } = Route.useParams();
   const { data } = useQuery(
@@ -35,7 +45,23 @@ function PostDetailPage() {
     ...trpc.posts.approve.mutationOptions(),
     onSuccess: () => {
       queryClient.invalidateQueries();
-      toast.success("Post approved and sent to Postiz");
+      toast.success("Post approved");
+    },
+  });
+
+  const pipelineMutation = useMutation({
+    ...trpc.posts.moveToPipeline.mutationOptions(),
+    onSuccess: () => {
+      queryClient.invalidateQueries();
+      toast.success("Moved to pipeline");
+    },
+  });
+
+  const postedMutation = useMutation({
+    ...trpc.posts.markAsPosted.mutationOptions(),
+    onSuccess: () => {
+      queryClient.invalidateQueries();
+      toast.success("Marked as posted");
     },
   });
 
@@ -73,12 +99,13 @@ function PostDetailPage() {
 
   const { post, hook, analytics } = data;
   const isPending = post.status === "pending";
+  const canEdit = isPending || post.status === "approved";
 
   return (
     <div className="container mx-auto max-w-4xl px-4 py-6 space-y-6">
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold">Post #{post.id}</h1>
-        <Badge>{post.status}</Badge>
+        <Badge className={statusColors[post.status] ?? ""}>{post.status}</Badge>
       </div>
 
       {post.slides && post.slides.length > 0 && (
@@ -86,7 +113,7 @@ function PostDetailPage() {
           slides={post.slides}
           cleanSlides={post.cleanSlides}
           postId={post.id}
-          editable={isPending}
+          editable={canEdit}
           slideTextOverlays={post.slideTextOverlays}
           hookSlideTexts={hook?.slideTexts as string[] | null}
         />
@@ -129,7 +156,7 @@ function PostDetailPage() {
           <CardTitle className="text-lg">Caption</CardTitle>
         </CardHeader>
         <CardContent className="space-y-3">
-          {isPending ? (
+          {canEdit ? (
             <>
               <Textarea
                 defaultValue={post.caption ?? ""}
@@ -208,7 +235,7 @@ function PostDetailPage() {
             onClick={() => approveMutation.mutate({ id: post.id })}
             disabled={approveMutation.isPending}
           >
-            {approveMutation.isPending ? "Approving..." : "Approve & Post"}
+            {approveMutation.isPending ? "Approving..." : "Approve"}
           </Button>
 
           <Dialog>
@@ -244,6 +271,35 @@ function PostDetailPage() {
             disabled={regenerateMutation.isPending}
           >
             Regenerate
+          </Button>
+        </div>
+      )}
+
+      {post.status === "approved" && (
+        <div className="flex gap-3">
+          <Button
+            onClick={() => pipelineMutation.mutate({ id: post.id })}
+            disabled={pipelineMutation.isPending}
+          >
+            {pipelineMutation.isPending ? "Moving..." : "Move to Pipeline"}
+          </Button>
+          <Button
+            variant="outline"
+            onClick={() => regenerateMutation.mutate({ id: post.id })}
+            disabled={regenerateMutation.isPending}
+          >
+            Regenerate
+          </Button>
+        </div>
+      )}
+
+      {post.status === "pipeline" && (
+        <div className="flex gap-3">
+          <Button
+            onClick={() => postedMutation.mutate({ id: post.id })}
+            disabled={postedMutation.isPending}
+          >
+            {postedMutation.isPending ? "Updating..." : "Mark as Posted"}
           </Button>
         </div>
       )}

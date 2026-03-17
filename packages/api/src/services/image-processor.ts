@@ -51,7 +51,7 @@ function buildTextOverlaySvg(
 
   let elements = "";
   for (let i = 0; i < boxes.length; i++) {
-    const b = boxes[i];
+    const b = boxes[i]!;
     const prev = boxes[i - 1];
     const next = boxes[i + 1];
     const rTop = !prev ? borderRadius : 0;

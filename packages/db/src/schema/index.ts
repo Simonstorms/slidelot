@@ -44,7 +44,7 @@ export const posts = sqliteTable("posts", {
     .notNull()
     .references(() => hooks.id),
   status: text("status", {
-    enum: ["generating", "pending", "approved", "posted", "rejected", "failed"],
+    enum: ["generating", "pending", "approved", "pipeline", "posted", "rejected", "failed"],
   })
     .notNull()
     .default("generating"),

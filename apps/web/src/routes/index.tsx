@@ -20,6 +20,7 @@ const statusColors: Record<string, string> = {
   generating: "bg-yellow-100 text-yellow-800",
   pending: "bg-blue-100 text-blue-800",
   approved: "bg-green-100 text-green-800",
+  pipeline: "bg-purple-100 text-purple-800",
   posted: "bg-emerald-100 text-emerald-800",
   rejected: "bg-red-100 text-red-800",
   failed: "bg-destructive/10 text-destructive",
@@ -39,10 +40,23 @@ function PostsPage() {
     onSuccess: () => queryClient.invalidateQueries(),
   });
 
+  const pipelineMutation = useMutation({
+    ...trpc.posts.moveToPipeline.mutationOptions(),
+    onSuccess: () => queryClient.invalidateQueries(),
+  });
+
+  const postedMutation = useMutation({
+    ...trpc.posts.markAsPosted.mutationOptions(),
+    onSuccess: () => queryClient.invalidateQueries(),
+  });
+
   const rejectMutation = useMutation({
     ...trpc.posts.reject.mutationOptions(),
     onSuccess: () => queryClient.invalidateQueries(),
   });
+
+  const countByStatus = (status: string) =>
+    allPosts?.filter((p) => p.post.status === status).length ?? 0;
 
   return (
     <div className="container mx-auto max-w-5xl px-4 py-6 space-y-6">
@@ -54,11 +68,17 @@ function PostsPage() {
             All ({allPosts?.length ?? 0})
           </TabsTrigger>
           <TabsTrigger value="pending">
-            Pending (
-            {allPosts?.filter((p) => p.post.status === "pending").length ?? 0})
+            Pending ({countByStatus("pending")})
           </TabsTrigger>
-          <TabsTrigger value="approved">Approved</TabsTrigger>
-          <TabsTrigger value="posted">Posted</TabsTrigger>
+          <TabsTrigger value="approved">
+            Approved ({countByStatus("approved")})
+          </TabsTrigger>
+          <TabsTrigger value="pipeline">
+            Pipeline ({countByStatus("pipeline")})
+          </TabsTrigger>
+          <TabsTrigger value="posted">
+            Posted ({countByStatus("posted")})
+          </TabsTrigger>
           <TabsTrigger value="rejected">Rejected</TabsTrigger>
         </TabsList>
 
@@ -96,7 +116,7 @@ function PostsPage() {
                       </Badge>
                     )}
 
-                    <div className="flex gap-2">
+                    <div className="flex gap-2 flex-wrap">
                       <Link
                         to="/post/$postId"
                         params={{ postId: String(post.id) }}
@@ -127,6 +147,28 @@ function PostsPage() {
                             Reject
                           </Button>
                         </>
+                      )}
+                      {post.status === "approved" && (
+                        <Button
+                          size="sm"
+                          onClick={() =>
+                            pipelineMutation.mutate({ id: post.id })
+                          }
+                          disabled={pipelineMutation.isPending}
+                        >
+                          To Pipeline
+                        </Button>
+                      )}
+                      {post.status === "pipeline" && (
+                        <Button
+                          size="sm"
+                          onClick={() =>
+                            postedMutation.mutate({ id: post.id })
+                          }
+                          disabled={postedMutation.isPending}
+                        >
+                          Mark Posted
+                        </Button>
                       )}
                     </div>
                   </CardContent>

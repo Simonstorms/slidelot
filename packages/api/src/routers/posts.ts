@@ -2,7 +2,6 @@ import { router, publicProcedure } from "../index";
 import { posts, hooks, analytics, generationJobs } from "@slidelot/db/schema";
 import { eq, desc } from "drizzle-orm";
 import { z } from "zod";
-import { postDraft } from "../services/postiz";
 import { env } from "@slidelot/env/server";
 import { runGenerationJob } from "./generation";
 import { join } from "node:path";
@@ -18,6 +17,7 @@ export const postsRouter = router({
               "generating",
               "pending",
               "approved",
+              "pipeline",
               "posted",
               "rejected",
               "failed",
@@ -75,46 +75,40 @@ export const postsRouter = router({
   approve: publicProcedure
     .input(z.object({ id: z.number() }))
     .mutation(async ({ ctx, input }) => {
+      await ctx.db
+        .update(posts)
+        .set({ status: "approved", updatedAt: new Date() })
+        .where(eq(posts.id, input.id));
+    }),
+
+  moveToPipeline: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ ctx, input }) => {
+      await ctx.db
+        .update(posts)
+        .set({ status: "pipeline", updatedAt: new Date() })
+        .where(eq(posts.id, input.id));
+    }),
+
+  markAsPosted: publicProcedure
+    .input(z.object({ id: z.number() }))
+    .mutation(async ({ ctx, input }) => {
       const [post] = await ctx.db
         .select()
         .from(posts)
         .where(eq(posts.id, input.id));
 
       if (!post) throw new Error("Post not found");
-      if (!post.slides || !post.caption) {
-        throw new Error("Post missing slides or caption");
-      }
 
-      try {
-        const postizId = await postDraft(
-          post.slides,
-          post.caption,
-          env.UPLOADS_DIR
-        );
+      await ctx.db
+        .update(posts)
+        .set({ status: "posted", updatedAt: new Date() })
+        .where(eq(posts.id, input.id));
 
-        await ctx.db
-          .update(posts)
-          .set({
-            status: "posted",
-            postizId,
-            updatedAt: new Date(),
-          })
-          .where(eq(posts.id, input.id));
-
-        await ctx.db
-          .update(hooks)
-          .set({ status: "untested", updatedAt: new Date() })
-          .where(eq(hooks.id, post.hookId));
-
-        return { success: true, postizId };
-      } catch (error) {
-        await ctx.db
-          .update(posts)
-          .set({ status: "approved", updatedAt: new Date() })
-          .where(eq(posts.id, input.id));
-
-        throw error;
-      }
+      await ctx.db
+        .update(hooks)
+        .set({ status: "untested", updatedAt: new Date() })
+        .where(eq(hooks.id, post.hookId));
     }),
 
   reject: publicProcedure
