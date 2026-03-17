@@ -164,3 +164,10 @@ export async function reprocessSingleSlide(
     .webp({ quality: 90 })
     .toFile(outputPath);
 }
+
+export async function convertSlideToJpeg(srcPath: string): Promise<Buffer> {
+  return sharp(srcPath)
+    .resize(1080, 1350, { fit: "cover" })
+    .jpeg({ quality: 92 })
+    .toBuffer();
+}

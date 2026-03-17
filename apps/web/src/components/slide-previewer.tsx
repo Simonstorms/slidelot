@@ -4,14 +4,108 @@ import { env } from "@slidelot/env/web";
 import { trpc, queryClient } from "@/utils/trpc";
 import { SlideTextEditor } from "./slide-text-editor";
 
-function downloadSlide(slidePath: string, filename: string) {
-  const url = `${env.VITE_SERVER_URL}/uploads/${slidePath}`;
+const W = 1080;
+const H = 1350;
+
+function loadImage(src: string): Promise<HTMLImageElement> {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = "anonymous";
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
+function renderSlideToCanvas(
+  ctx: CanvasRenderingContext2D,
+  img: HTMLImageElement,
+  overlay: { text: string; xPercent: number; yPercent: number; fontScale: number },
+) {
+  const scale = Math.max(W / img.naturalWidth, H / img.naturalHeight);
+  const sw = img.naturalWidth * scale;
+  const sh = img.naturalHeight * scale;
+  ctx.drawImage(img, (W - sw) / 2, (H - sh) / 2, sw, sh);
+
+  const text = overlay.text.trim();
+  if (!text) return;
+
+  const baseFontPx = H * 0.04;
+  const fontSize = baseFontPx * overlay.fontScale;
+  const lineHeight = fontSize * 1.6;
+  const padX = fontSize * 0.5;
+  const padY = fontSize * 0.25;
+  const radius = fontSize * 0.35;
+
+  ctx.font = `800 ${fontSize}px "Proxima Nova", "Helvetica Neue", Helvetica, Arial, sans-serif`;
+  ctx.textAlign = "center";
+  ctx.textBaseline = "alphabetic";
+
+  const maxWidth = W * 0.9;
+  const words = text.split(/\s+/);
+  const lines: string[] = [];
+  let current = "";
+  for (const word of words) {
+    const test = current ? `${current} ${word}` : word;
+    if (ctx.measureText(test).width > maxWidth - padX * 2 && current) {
+      lines.push(current);
+      current = word;
+    } else {
+      current = test;
+    }
+  }
+  if (current) lines.push(current);
+
+  const cx = W * (overlay.xPercent / 100);
+  const totalH = lines.length * lineHeight;
+  const startY = H * (overlay.yPercent / 100) - totalH / 2 + fontSize;
+
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[i]!;
+    const y = startY + i * lineHeight;
+    const m = ctx.measureText(line);
+    const boxW = m.width + padX * 2;
+    const boxH = lineHeight;
+    const boxX = cx - boxW / 2;
+    const boxY = y - fontSize - padY;
+
+    const isFirst = i === 0;
+    const isLast = i === lines.length - 1;
+    const rTL = isFirst ? radius : 0;
+    const rTR = isFirst ? radius : 0;
+    const rBL = isLast ? radius : 0;
+    const rBR = isLast ? radius : 0;
+
+    ctx.fillStyle = "white";
+    ctx.beginPath();
+    ctx.roundRect(boxX, boxY, boxW, boxH, [rTL, rTR, rBR, rBL]);
+    ctx.fill();
+
+    ctx.fillStyle = "black";
+    ctx.fillText(line, cx, y);
+  }
+}
+
+async function renderAndDownload(
+  cleanSlidePath: string,
+  overlay: { text: string; xPercent: number; yPercent: number; fontScale: number },
+  filename: string,
+) {
+  const img = await loadImage(`${env.VITE_SERVER_URL}/uploads/${cleanSlidePath}`);
+  const canvas = document.createElement("canvas");
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext("2d")!;
+  renderSlideToCanvas(ctx, img, overlay);
+  const blob = await new Promise<Blob>((r) => canvas.toBlob((b) => r(b!), "image/jpeg", 0.92));
+  const blobUrl = URL.createObjectURL(blob);
   const a = document.createElement("a");
-  a.href = url;
+  a.href = blobUrl;
   a.download = filename;
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
+  URL.revokeObjectURL(blobUrl);
 }
 
 export function SlidePreviewer({
@@ -53,14 +147,18 @@ export function SlidePreviewer({
   });
 
   const handleDownload = () => {
-    const path = cleanSlides?.[current] ?? slides[current];
-    if (path) downloadSlide(path, `post-${postId}-slide-${current + 1}.webp`);
+    const cleanPath = cleanSlides?.[current] ?? slides[current];
+    if (!cleanPath) return;
+    const overlay = getOverlay(current);
+    renderAndDownload(cleanPath, overlay, `post-${postId}-slide-${current + 1}.jpg`);
   };
 
   const handleDownloadAll = () => {
     const sources = cleanSlides ?? slides;
     sources.forEach((path, i) => {
-      if (path) downloadSlide(path, `post-${postId}-slide-${i + 1}.webp`);
+      if (!path) return;
+      const overlay = getOverlay(i);
+      renderAndDownload(path, overlay, `post-${postId}-slide-${i + 1}.jpg`);
     });
   };
 

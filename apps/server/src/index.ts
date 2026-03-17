@@ -23,6 +23,7 @@ app.use(
 
 app.use("/uploads/*", serveStatic({ root: "./" }));
 
+
 app.use(
   "/trpc/*",
   trpcServer({
