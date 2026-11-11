@@ -11,16 +11,16 @@
   },
   "scripts": {},
   "dependencies": {
-    "@anthropic-ai/sdk": "^0.77.0",
-    "@fal-ai/client": "^1.9.4",
+    "@anthropic-ai/sdk": "^1.6.0",
+    "@fal-ai/client": "^1.10.1",
     "@slidelot/db": "workspace:*",
     "@slidelot/env": "workspace:*",
     "@trpc/client": "catalog:",
     "@trpc/server": "catalog:",
     "dotenv": "catalog:",
-    "drizzle-orm": "^0.45.1",
-    "nanoid": "^5.1.6",
-    "sharp": "^0.34.5",
+    "drizzle-orm": "^0.45.4",
+    "nanoid": "^6.0.2",
+    "sharp": "^0.35.5",
     "zod": "catalog:"
   },
   "devDependencies": {

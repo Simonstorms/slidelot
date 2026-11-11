@@ -23,13 +23,13 @@
     "@libsql/client": "catalog:",
     "@slidelot/env": "workspace:*",
     "dotenv": "catalog:",
-    "drizzle-orm": "^0.45.1",
+    "drizzle-orm": "^0.45.4",
     "libsql": "catalog:",
     "zod": "catalog:"
   },
   "devDependencies": {
     "@slidelot/config": "workspace:*",
-    "drizzle-kit": "^0.31.8",
+    "drizzle-kit": "^0.31.11",
     "typescript": "catalog:"
   }
 }
